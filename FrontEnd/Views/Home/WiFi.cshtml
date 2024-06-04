@@ -1,0 +1,85 @@
+﻿@model IEnumerable<WifiViewModel>
+
+@{
+    ViewBag.Title = "Lista de redes wifi creadas";
+    string datePattern = "dd/MM/yyyy HH:mm:ss";
+}
+
+<h2>@ViewBag.Title</h2>
+
+<div class="modal fade" tabindex="-1" id="deleteModal" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Estás seguro?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-danger bg-opacity-25">
+                <p>Te dispones a eliminar una red WiFi del archivo encriptado, estás seguro?, esto es irreversible.</p>
+            </div>
+            <div class="modal-footer bg-danger">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmDeleteButton">Si, bórralo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<table class="table table-success table-striped table-responsive">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Password</th>
+            <th>Protocolo</th>
+            <th class="col-2 text-end">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var wifi in Model)
+        {
+            
+            <tr>
+                <td>@wifi.Ssid</td>
+                <td>**********</td>
+                <td>@wifi.Auth</td>
+                <td>
+                    <div class ="btn-group float-end" role="group" aria-label="Basic example">
+                        <a class="btn btn-sm btn-secondary" asp-controller="Home" asp-action="Imprimir" asp-route-id="@wifi.Id"><i class="fa-solid fa-print me-1"></i></a>
+                        <a class="btn btn-sm btn-primary" asp-controller="Home" asp-action="Editar" asp-route-id="@wifi.Id"><i class="fa-solid fa-pen me-1"></i></a>
+                        <a class="btn btn-sm btn-danger" onclick="confirmDelete(@wifi.Id)"><i class="fa-solid fa-trash-can me-1"></i></a>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts
+{
+    <script type="text/javascript">
+        var wifiIdToDelete = "";
+
+        function confirmDelete(wifiId)
+        {
+            wifiIdToDelete = wifiId;
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+
+        document.getElementById('confirmDeleteButton').addEventListener('click', function () {
+            if (wifiIdToDelete !== "") {
+                var url = 'https://localhost:7044/wifi/' + wifiIdToDelete;
+                console.log(url);
+                fetch(url, {
+                    method: 'DELETE'
+                }).then(respose => {
+                    if (respose.status == 204) {
+                        location.reload();
+                    } else {
+                        alert('Error al eliminar la red WiFi');
+                    }
+                }).catch(error => console.log("Error: " + error));
+            }
+        });
+    </script>
+}

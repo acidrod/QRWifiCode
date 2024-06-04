@@ -1,0 +1,9 @@
+﻿@model ImprimirViewModel
+
+@{
+    ViewBag.Title = "Imprimir";
+}
+
+<div class="text-center">
+    <img src="@String.Format("data:image/pngh;base64,{0}", Model.QrCode)" style="width:30em;height:30em" />
+</div>

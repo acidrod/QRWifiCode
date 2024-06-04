@@ -1,0 +1,84 @@
+﻿@model WifiViewModel
+
+@{
+    ViewBag.Title = "Creación de QR Wifi";
+    ViewBag.AuthProtocol = Model.AuthProtocol;
+}
+
+<h2>@ViewBag.Title</h2>
+
+<div class="container p-3 mb-2 bg-secondary text-white">
+    <div class="row">
+        <div class="col-8">
+            <div class="row">
+                <div class="col">
+                    <label asp-for="Ssid" class="form-label"></label>
+                    <input class="form-control" asp-for="Ssid" type="text" placeholder="Ingrese el SSID de la Wifi" />
+                </div>
+                <div class="col">
+                    <label asp-for="Password" class="form-label"></label>
+                    @Html.TextBoxFor(x => x.Password, new { @class = "form-control", type = "password", placeholder = "Ingrese la contraseña de la Wifi" })
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col">
+                    <label asp-for="MailTo" class="form-label"></label>
+                    <input class="form-control" asp-for="MailTo" type="email" placeholder="El email para despachar una copia del código" />
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col">
+                    <label asp-for="AuthProtocol" class="form-label"></label>
+                    @Html.DropDownListFor(x => x.Auth, Model.AuthProtocol, new { @class = "form-select" })
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+            <img src="~/img/WifiIcon.svg" id="qr" class="d-block mx-auto" style="width:20em; height:20em; background-color:#ffffff" />
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col">
+            <button type="button" id="getqr" class="btn btn-primary">Generar QR</button><input type="hidden" asp-for="Id" />
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script type="text/javascript">
+        document.getElementById('getqr').addEventListener('click', function () { 
+            //obtiene los valores del formulario
+            var ssid = document.getElementById('Ssid').value;
+            var password = document.getElementById('Password').value;
+            var authProtocol = document.getElementById('Auth').value;
+            var mailTo = document.getElementById('MailTo').value;
+            var id = document.getElementById('Id').value;
+            var method = id == 0 ? 'POST':'PUT';
+            var url = 'https://localhost:7044/wifi';
+
+            if(method === 'PUT'){
+                url += '/' + id;
+            }
+
+            var data = {
+                Id: id,
+                Ssid: ssid,
+                Password: password,
+                Auth: authProtocol,
+                MailTo: mailTo
+            };
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            }).then(response => response.text())
+            .then(base64Image => {
+                document.getElementById('qr').src = "data:image/png;base64," + base64Image;
+            })
+            .catch(error => console.error('Error: ', error));
+        });
+    </script>
+}

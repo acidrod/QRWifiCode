@@ -1,0 +1,58 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h1 class="display-4">QR WiFi Generator</h1>
+<h4>Bienvenido a QR WiFi Generator</h4>
+<h5>Genera y almacena códigos QR para tus redes WiFi de forma rápida y sencilla.</h5>
+<hr />
+<h5>¿Por que?</h5>
+<p style="margin:0; text-indent:2rem; text-align:justify; margin-bottom:1rem">Este mini-proyecto nace inicialmente de la necesidad de aprender como enviar información entre una aplicación Web MVC en Razor y una aplicación de tipo WebAPI MVC. Este hecho define esta solución como
+    una aplicación Front-End / Back-End en términos de la infraestructura. Fue creada de manera sencilla, sin grandes pretenciones en el aspecto gráfico, si no mas bien en el aspecto del funcionamiento video
+    un Back-end un poco mas complejo que la típica aplicación con un CRUD.
+</p>
+<p style="margin:0; text-indent:2rem; text-align:justify; margin-bottom:1rem">
+    Esta aplicación implemente no solo la generación de códigos QR si no que ademas tiene configurado un Background-Worker que funciona en el Back-end para el despacho de los emails usando una cola "thread-safe"
+    y dejar libre a la aplicación Front-End una vez que se recibe el código solicitadom, esto permite un alto nivel de requerimientos por segundo sin perjudicar en grán medida las velocidades de respuesta.
+</p>
+<p style="margin:0; text-indent:2rem; text-align:justify">
+    Puedes hacer un fork de esta aplicación sin ni un tipo de restricciones, lo único que te pido es que me des el crédito que corresponde mencionandome en tu proyecto. No es que esta solución sea tremendamente
+    inovadora pero si tiene varias horas de trabajo que espero al menos tengan un poco de reconocimiento en la comunidad de desarrolladores.
+</p>
+<hr />
+<h5>¿Que puedes hacer aquí?</h5>
+<ul>
+    <li><span class="fw-bold me-2">Generar códigos QR para Redes WiFi:</span>Introduce los detalles de tu red WiFi y genera un código QR que podrás imprimir o compartir fácilmente.</li>
+    <li><span class="fw-bold me-2">Almacenamiento Seguro:</span>Todos los códigos QR generados se almacenan en tu cuenta para que puedas volver a acceder a ellos cuando lo necesites.</li>
+    <li><span class="fw-bold me-2">Envío por Correo Electrónico:</span>Recibe tus códigos QR directamente en tu bandeja de entrada, listos para imprimir o compartir.</li>
+</ul>
+<h5>¿Como funciona?</h5>
+<ol>
+    <li>
+        <span class="fw-bold me-2">Introduce los Detalles de tu red WiFi</span>
+        <ul>
+            <li>Nombre de la Red (SSID)</li>
+            <li>Contraseña</li>
+            <li>Tipo de Seguridad (WPA, WPA2, WEP)</li>
+        </ul>
+    </li>
+    <li>
+        <span class="fw-bold me-2">Genéra tu código QR</span>
+        <ul>
+            <li>Haz clic en el botón "Generar" para crear tu código QR.</li>
+        </ul>
+    </li>
+    <li>
+        <span class="fw-bold me-2">Almacena y Comparte</span>
+        <ul>
+            <li>Guarda automáticamente tus códigos QR en un archivo donde la información de las claves se encuentra encriptadas!.</li>
+            <li>Envía el código QR al correo electrónico quien tu quieras.</li>
+        </ul>
+    </li>
+</ol>
+<h5>Configuración</h5>
+<p>
+    Abre el archivo <span class="fw-bold">"appsettins.json"</span> para la aplicación "QRCode" y agrega la información donde veas estos valores <span class="fw-bold">[YOUR_NAME]</span>,
+    etc... para el <span class="fw-bold">EncryptionKey DEBES usar un arreglo de byte[] como llave</span>. En alguna versión futura podría reemplazar este dato por una string simple que
+    permita funcionar como llave. Eres libre de cambiar este comportamiento por ti mismo si así lo deseas.
+</p>
