@@ -1,0 +1,58 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET Core Launch (Backend QRCode)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-backend",
+            "program": "${workspaceFolder}/QRCode/bin/Debug/net8.0/QRCode.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/QRCode",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        },
+        {
+            "name": ".NET Core Launch (FrontEnd)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-frontend",
+            "program": "${workspaceFolder}/FrontEnd/bin/Debug/net8.0/FrontEnd.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/FrontEnd",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "sourceFileMap": {
+                "/Views": "${workspaceFolder}/FrontEnd/Views"
+            }
+        },
+        {
+            "name": ".NET Core Attach",
+            "type": "coreclr",
+            "request": "attach"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Launch Full Stack (Backend → Frontend)",
+            "configurations": [".NET Core Launch (Backend QRCode)", ".NET Core Launch (FrontEnd)"],
+            "stopAll": true,
+            "preLaunchTask": "build"
+        }
+    ]
+}
