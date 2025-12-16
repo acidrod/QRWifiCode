@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using QRCode.Models;
 using QRCode.Services;
 using QRCoder;
@@ -21,7 +20,7 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { 
         Title = "QRCode", 
         Version = "v1", 
-        Description = "WebAPI para creación de códigos QR, almacenamiento de datos y despacho de emails en cola usando un BackgroundWorker" });
+        Description = "WebAPI para creaciï¿½n de cï¿½digos QR, almacenamiento de datos y despacho de emails en cola usando un BackgroundWorker" });
 });
 
 builder.Services.AddCors(opt =>
@@ -90,8 +89,8 @@ app.MapPost("/wifi", ([FromServices]IConfiguration configuration, [FromServices]
     var email = new Email()
     {
         To = wifiParams.MailTo,
-        Body = $"<h1>Este es tu código QR para tu Wifi</h1><p>Hola, te recomiendo guardar el QR e imprimirlo para que puedas usarlo fácilmente con tu visitas que quieran conectarse a tu Wifi.</p><br><p>Saludos {NameFrom}</p>",
-        Subject = $"Código QR para tu Wifi {wifiParams.Ssid}",
+        Body = $"<h1>Este es tu cï¿½digo QR para tu Wifi</h1><p>Hola, te recomiendo guardar el QR e imprimirlo para que puedas usarlo fï¿½cilmente con tu visitas que quieran conectarse a tu Wifi.</p><br><p>Saludos {NameFrom}</p>",
+        Subject = $"Cï¿½digo QR para tu Wifi {wifiParams.Ssid}",
         QrCodeBase64String = qrCode
     };
 
@@ -143,8 +142,8 @@ app.MapPut("/wifi/{id}", ([FromServices] IConfiguration configuration, [FromServ
         var email = new Email()
         {
             To = wifiParams.MailTo,
-            Body = $"<h1>Este es tu código QR para tu Wifi</h1><p>Hola, te recomiendo guardar el QR e imprimirlo para que puedas usarlo fácilmente con tu visitas que quieran conectarse a tu Wifi.</p><br><p>Saludos {NameFrom}</p>",
-            Subject = $"Código QR para tu Wifi {wifiParams.Ssid}",
+            Body = $"<h1>Este es tu cï¿½digo QR para tu Wifi</h1><p>Hola, te recomiendo guardar el QR e imprimirlo para que puedas usarlo fï¿½cilmente con tu visitas que quieran conectarse a tu Wifi.</p><br><p>Saludos {NameFrom}</p>",
+            Subject = $"Cï¿½digo QR para tu Wifi {wifiParams.Ssid}",
             QrCodeBase64String = qrCode
         };
 
@@ -173,12 +172,17 @@ app.MapDelete("/wifi/{id}", (int id) =>
 List<WifiParams> GetAllWifi()
 {
     var base64ExistingDate = File.Exists(storedWifiEncrypted) ? File.ReadAllText(storedWifiEncrypted) : string.Empty;
-    List<WifiParams> existingDataList = new();
+    List<WifiParams> existingDataList = [];
 
     if (string.IsNullOrEmpty(base64ExistingDate))
         return existingDataList;
 
-    var securityService = new RandomIvEncryptionService(Convert.FromBase64String(builder.Configuration.GetSection("EncryptionKey").Value));
+    var encrypyionKey = builder.Configuration.GetSection("EncryptionKey").Value;
+
+    if (string.IsNullOrEmpty(encrypyionKey))
+        throw new Exception("Encryption Key is not configured.");
+
+    var securityService = new RandomIvEncryptionService(Convert.FromBase64String(encrypyionKey));
     var decripted = securityService.Decrypt(base64ExistingDate);
     existingDataList = JsonSerializer.Deserialize<List<WifiParams>>(decripted)!;
 
@@ -199,7 +203,7 @@ WifiParams GetWifiById(int id)
 void WriteWifiData(List<WifiParams> wifiParams)
 {
     var json = JsonSerializer.Serialize(wifiParams);
-    var securityService = new RandomIvEncryptionService(Convert.FromBase64String(encrypyionKey));
+    var securityService = new RandomIvEncryptionService(Convert.FromBase64String(encrypyionKey!));
     var encrypted = securityService.Encrypt(json);
     File.WriteAllText(storedWifiEncrypted, encrypted);
 }

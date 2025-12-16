@@ -33,7 +33,8 @@ public class EmailService : IEmailService
 
         //Authentication
         using var googleSmtp = new SmtpClient();
-        googleSmtp.Connect(_configuration.GetSection("EmailSender:SmtpServer").Value, int.Parse(_configuration.GetSection("EmailSender:SmtpPort").Value), false);
+        var smtpPort = _configuration.GetSection("EmailSender:SmtpPort").Value;
+        googleSmtp.Connect(_configuration.GetSection("EmailSender:SmtpServer").Value, int.Parse(smtpPort!), false);
         await googleSmtp.AuthenticateAsync(_configuration.GetSection("EmailSender:EmailFrom").Value, _configuration.GetSection("EmailSender:EmailAccountPassword").Value);
 
         await googleSmtp.SendAsync(email);

@@ -15,6 +15,6 @@ public class BackgroundMailQueue<T> : IBackgroundQueue<T> where T : class
     public T Dequeue()
     {
         var succcess = _items.TryDequeue(out var workItem);
-        return succcess ? workItem : null;
+        return succcess ? workItem! : throw new InvalidOperationException("Queue is empty");
     }
 }
