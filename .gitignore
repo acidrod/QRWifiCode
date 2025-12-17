@@ -401,3 +401,9 @@ FodyWeavers.xsd
 .env
 .env.local
 .env.*.local
+
+##
+## Application Data Files
+##
+# Encrypted WiFi data - contains user sensitive information
+**/Data/WifiData.cry

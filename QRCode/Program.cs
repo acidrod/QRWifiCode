@@ -5,10 +5,11 @@ using QRCoder;
 using System.Text.Json;
 
 string Policy = "MyPolicy";
-string storedWifiEncrypted = $"{Directory.GetCurrentDirectory()}\\Data\\WifiData.cry";
+string storedWifiEncrypted = Path.Combine(Directory.GetCurrentDirectory(), "Data", "WifiData.cry");
 
 var builder = WebApplication.CreateBuilder(args);
 var encrypyionKey = builder.Configuration.GetSection("EncryptionKey").Value;
+var encryptionKeyBytes = ParseEncryptionKey(encrypyionKey);
 var NameFrom = builder.Configuration.GetSection("EmailSender:NameFrom").Value;
 builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddHostedService<BackgroundWorkerService>(); //TIMED BackgroundWorker
@@ -44,14 +45,24 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(Policy);
 
-app.MapGet("/wifi", () =>
+app.MapGet("/wifi", (ILogger<Program> logger) =>
 {
-    var data = GetAllWifi();
+    try
+    {
+        logger.LogInformation("GET /wifi endpoint called");
+        var data = GetAllWifi();
+        logger.LogInformation("Retrieved {Count} wifi records", data?.Count ?? 0);
 
-    if (data == null)
-        return Results.NotFound();
+        if (data == null)
+            return Results.NotFound();
 
-    return Results.Ok(data);
+        return Results.Ok(data);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error in GET /wifi endpoint");
+        return Results.Problem(detail: ex.Message, statusCode: 500);
+    }
 });
 
 app.MapGet("/wifi/{id}", (int id) =>
@@ -89,8 +100,8 @@ app.MapPost("/wifi", ([FromServices]IConfiguration configuration, [FromServices]
     var email = new Email()
     {
         To = wifiParams.MailTo,
-        Body = $"<h1>Este es tu c�digo QR para tu Wifi</h1><p>Hola, te recomiendo guardar el QR e imprimirlo para que puedas usarlo f�cilmente con tu visitas que quieran conectarse a tu Wifi.</p><br><p>Saludos {NameFrom}</p>",
-        Subject = $"C�digo QR para tu Wifi {wifiParams.Ssid}",
+        Body = $"<h1>Este es tu código QR para tu Wifi</h1><p>Hola, te recomiendo guardar el QR e imprimirlo para que puedas usarlo fácilmente con tu visitas que quieran conectarse a tu Wifi.</p><br><p>Saludos {NameFrom}</p>",
+        Subject = $"Código QR para tu Wifi {wifiParams.Ssid}",
         QrCodeBase64String = qrCode
     };
 
@@ -142,8 +153,8 @@ app.MapPut("/wifi/{id}", ([FromServices] IConfiguration configuration, [FromServ
         var email = new Email()
         {
             To = wifiParams.MailTo,
-            Body = $"<h1>Este es tu c�digo QR para tu Wifi</h1><p>Hola, te recomiendo guardar el QR e imprimirlo para que puedas usarlo f�cilmente con tu visitas que quieran conectarse a tu Wifi.</p><br><p>Saludos {NameFrom}</p>",
-            Subject = $"C�digo QR para tu Wifi {wifiParams.Ssid}",
+            Body = $"<h1>Este es tu código QR para tu Wifi</h1><p>Hola, te recomiendo guardar el QR e imprimirlo para que puedas usarlo fácilmente con tu visitas que quieran conectarse a tu Wifi.</p><br><p>Saludos {NameFrom}</p>",
+            Subject = $"Código QR para tu Wifi {wifiParams.Ssid}",
             QrCodeBase64String = qrCode
         };
 
@@ -171,22 +182,31 @@ app.MapDelete("/wifi/{id}", (int id) =>
 
 List<WifiParams> GetAllWifi()
 {
-    var base64ExistingDate = File.Exists(storedWifiEncrypted) ? File.ReadAllText(storedWifiEncrypted) : string.Empty;
-    List<WifiParams> existingDataList = [];
+    try
+    {
+        var base64ExistingDate = File.Exists(storedWifiEncrypted) ? File.ReadAllText(storedWifiEncrypted) : string.Empty;
+        List<WifiParams> existingDataList = [];
 
-    if (string.IsNullOrEmpty(base64ExistingDate))
+        if (string.IsNullOrEmpty(base64ExistingDate))
+        {
+            app.Logger.LogInformation("No existing wifi data file found at {Path}", storedWifiEncrypted);
+            return existingDataList;
+        }
+
+        if (encryptionKeyBytes == null)
+            throw new Exception("Encryption Key is not configured.");
+
+        var securityService = new RandomIvEncryptionService(encryptionKeyBytes);
+        var decripted = securityService.Decrypt(base64ExistingDate);
+        existingDataList = JsonSerializer.Deserialize<List<WifiParams>>(decripted)!;
+
         return existingDataList;
-
-    var encrypyionKey = builder.Configuration.GetSection("EncryptionKey").Value;
-
-    if (string.IsNullOrEmpty(encrypyionKey))
-        throw new Exception("Encryption Key is not configured.");
-
-    var securityService = new RandomIvEncryptionService(Convert.FromBase64String(encrypyionKey));
-    var decripted = securityService.Decrypt(base64ExistingDate);
-    existingDataList = JsonSerializer.Deserialize<List<WifiParams>>(decripted)!;
-
-    return existingDataList;
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Error in GetAllWifi. File path: {Path}", storedWifiEncrypted);
+        throw;
+    }
 }
 
 WifiParams GetWifiById(int id)
@@ -203,7 +223,7 @@ WifiParams GetWifiById(int id)
 void WriteWifiData(List<WifiParams> wifiParams)
 {
     var json = JsonSerializer.Serialize(wifiParams);
-    var securityService = new RandomIvEncryptionService(Convert.FromBase64String(encrypyionKey!));
+    var securityService = new RandomIvEncryptionService(encryptionKeyBytes!);
     var encrypted = securityService.Encrypt(json);
     File.WriteAllText(storedWifiEncrypted, encrypted);
 }
@@ -227,6 +247,23 @@ string GetBase64QrCode(WifiParams wifiParams)
     var base64String = Convert.ToBase64String(data);
 
     return base64String;
+}
+
+byte[] ParseEncryptionKey(string? keyString)
+{
+    if (string.IsNullOrWhiteSpace(keyString))
+        throw new InvalidOperationException("EncryptionKey is not configured");
+
+    // Si la key viene en formato JSON array: [1,2,3,4,...]
+    if (keyString.StartsWith("[") && keyString.EndsWith("]"))
+    {
+        var cleanString = keyString.Trim('[', ']');
+        var numbers = cleanString.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        return numbers.Select(n => byte.Parse(n.Trim())).ToArray();
+    }
+
+    // Si la key viene en formato Base64
+    return Convert.FromBase64String(keyString);
 }
 
 app.Run();

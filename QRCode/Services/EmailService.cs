@@ -28,8 +28,21 @@ public class EmailService : IEmailService
         //Attachments
         builder.Attachments.Add("qr.png", imageByteArray);
         builder.HtmlBody = body;
+        
+        // Ensure UTF-8 encoding
+        var bodyPart = builder.ToMessageBody();
+        if (bodyPart is Multipart multipart)
+        {
+            foreach (var part in multipart)
+            {
+                if (part is TextPart textPart)
+                {
+                    textPart.ContentType.Charset = "utf-8";
+                }
+            }
+        }
 
-        email.Body = builder.ToMessageBody();
+        email.Body = bodyPart;
 
         //Authentication
         using var googleSmtp = new SmtpClient();
