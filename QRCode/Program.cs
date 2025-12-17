@@ -1,3 +1,5 @@
+using Asp.Versioning;
+using Asp.Versioning.Builder;
 using Microsoft.AspNetCore.Mvc;
 using QRCode.Models;
 using QRCode.Services;
@@ -11,6 +13,15 @@ var builder = WebApplication.CreateBuilder(args);
 var encrypyionKey = builder.Configuration.GetSection("EncryptionKey").Value;
 var encryptionKeyBytes = ParseEncryptionKey(encrypyionKey);
 var NameFrom = builder.Configuration.GetSection("EmailSender:NameFrom").Value;
+
+// API Versioning
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+});
+
 builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddHostedService<BackgroundWorkerService>(); //TIMED BackgroundWorker
 builder.Services.AddSingleton<IBackgroundQueue<Email>, BackgroundMailQueue<Email>>();
@@ -19,9 +30,9 @@ builder.Services.AddHostedService<BackgroundMailQueueService>(); //QUEUED Backgr
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { 
-        Title = "QRCode", 
+        Title = "QRCode API", 
         Version = "v1", 
-        Description = "WebAPI para creaci�n de c�digos QR, almacenamiento de datos y despacho de emails en cola usando un BackgroundWorker" });
+        Description = "WebAPI v1 para creación de códigos QR, almacenamiento de datos y despacho de emails en cola usando un BackgroundWorker" });
 });
 
 builder.Services.AddCors(opt =>
@@ -45,11 +56,19 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(Policy);
 
-app.MapGet("/wifi", (ILogger<Program> logger) =>
+// API Version Set
+var apiVersionSet = app.NewApiVersionSet()
+    .HasApiVersion(new ApiVersion(1, 0))
+    .ReportApiVersions()
+    .Build();
+
+var v1 = app.MapGroup("/v1").WithApiVersionSet(apiVersionSet);
+
+v1.MapGet("/wifi", (ILogger<Program> logger) =>
 {
     try
     {
-        logger.LogInformation("GET /wifi endpoint called");
+        logger.LogInformation("GET /v1/wifi endpoint called");
         var data = GetAllWifi();
         logger.LogInformation("Retrieved {Count} wifi records", data?.Count ?? 0);
 
@@ -60,12 +79,12 @@ app.MapGet("/wifi", (ILogger<Program> logger) =>
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Error in GET /wifi endpoint");
+        logger.LogError(ex, "Error in GET /v1/wifi endpoint");
         return Results.Problem(detail: ex.Message, statusCode: 500);
     }
-});
+}).WithTags("WiFi");
 
-app.MapGet("/wifi/{id}", (int id) =>
+v1.MapGet("/wifi/{id}", (int id) =>
 {
     var data = GetWifiById(id);
 
@@ -73,11 +92,11 @@ app.MapGet("/wifi/{id}", (int id) =>
         return Results.NotFound();
 
     return Results.Ok(data);
-});
+}).WithTags("WiFi");
 
-app.MapGet("/wifi/{id}/print", (int id) => GetBase64QrCode(GetWifiById(id)));
+v1.MapGet("/wifi/{id}/print", (int id) => GetBase64QrCode(GetWifiById(id))).WithTags("WiFi");
 
-app.MapPost("/wifi", ([FromServices]IConfiguration configuration, [FromServices]IBackgroundQueue<Email> queue, WifiParams wifiParams) =>
+v1.MapPost("/wifi", ([FromServices]IConfiguration configuration, [FromServices]IBackgroundQueue<Email> queue, WifiParams wifiParams) =>
 {
     var qrCode = GetBase64QrCode(wifiParams);
 
@@ -108,9 +127,9 @@ app.MapPost("/wifi", ([FromServices]IConfiguration configuration, [FromServices]
     queue.Enqueue(email);
 
     return qrCode;
-});
+}).WithTags("WiFi");
 
-app.MapPost("/wifi/{id}", (int id) =>
+v1.MapPost("/wifi/{id}", (int id) =>
 {
     var qrGenerator = new QRCodeGenerator();
     var storedWifi = GetWifiById(id);
@@ -132,9 +151,9 @@ app.MapPost("/wifi/{id}", (int id) =>
     var base64String = Convert.ToBase64String(data);
 
     return base64String;
-});
+}).WithTags("WiFi");
 
-app.MapPut("/wifi/{id}", ([FromServices] IConfiguration configuration, [FromServices] IBackgroundQueue<Email> queue, int id, WifiParams wifiParams) =>
+v1.MapPut("/wifi/{id}", ([FromServices] IConfiguration configuration, [FromServices] IBackgroundQueue<Email> queue, int id, WifiParams wifiParams) =>
 {
     var existingData = GetAllWifi();
     var toUpdate = existingData.FirstOrDefault(c => c.Id == id);
@@ -164,9 +183,9 @@ app.MapPut("/wifi/{id}", ([FromServices] IConfiguration configuration, [FromServ
     }
 
     return null;
-});
+}).WithTags("WiFi");
 
-app.MapDelete("/wifi/{id}", (int id) =>
+v1.MapDelete("/wifi/{id}", (int id) =>
 {
     var existingData = GetAllWifi();
     var toDelete = existingData.FirstOrDefault(c => c.Id == id);
@@ -178,7 +197,7 @@ app.MapDelete("/wifi/{id}", (int id) =>
     }
 
     return Results.NoContent();
-});
+}).WithTags("WiFi");
 
 List<WifiParams> GetAllWifi()
 {
