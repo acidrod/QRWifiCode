@@ -26,7 +26,7 @@ https://localhost:7044/v{version}/{endpoint}
 
 ### Backend (QRCode)
 
-La API utiliza el paquete `Asp.Versioning.Http` v8.1.0 con la siguiente configuración:
+La API utiliza los paquetes `Asp.Versioning.Http` v8.1.0 y `Asp.Versioning.Mvc.ApiExplorer` v8.1.0 con la siguiente configuración:
 
 ```csharp
 builder.Services.AddApiVersioning(options =>
@@ -34,6 +34,10 @@ builder.Services.AddApiVersioning(options =>
     options.DefaultApiVersion = new ApiVersion(1, 0);
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.ReportApiVersions = true;
+}).AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
 });
 ```
 
@@ -42,6 +46,9 @@ builder.Services.AddApiVersioning(options =>
 - **DefaultApiVersion**: Si no se especifica versión, se usa v1.0
 - **AssumeDefaultVersionWhenUnspecified**: Permite llamadas sin versión (se usa la default)
 - **ReportApiVersions**: Incluye headers con versiones soportadas en las respuestas
+- **AddApiExplorer**: Integra el versionado con Swagger/OpenAPI para documentación automática
+- **GroupNameFormat**: Define el formato del nombre del grupo como 'v' seguido de la versión (ej: 'v1')
+- **SubstituteApiVersionInUrl**: Permite sustituir la versión en las URLs automáticamente
 
 ### Frontend (FrontEnd)
 
