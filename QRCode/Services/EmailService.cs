@@ -28,12 +28,26 @@ public class EmailService : IEmailService
         //Attachments
         builder.Attachments.Add("qr.png", imageByteArray);
         builder.HtmlBody = body;
+        
+        // Ensure UTF-8 encoding
+        var bodyPart = builder.ToMessageBody();
+        if (bodyPart is Multipart multipart)
+        {
+            foreach (var part in multipart)
+            {
+                if (part is TextPart textPart)
+                {
+                    textPart.ContentType.Charset = "utf-8";
+                }
+            }
+        }
 
-        email.Body = builder.ToMessageBody();
+        email.Body = bodyPart;
 
         //Authentication
         using var googleSmtp = new SmtpClient();
-        googleSmtp.Connect(_configuration.GetSection("EmailSender:SmtpServer").Value, int.Parse(_configuration.GetSection("EmailSender:SmtpPort").Value), false);
+        var smtpPort = _configuration.GetSection("EmailSender:SmtpPort").Value;
+        googleSmtp.Connect(_configuration.GetSection("EmailSender:SmtpServer").Value, int.Parse(smtpPort!), false);
         await googleSmtp.AuthenticateAsync(_configuration.GetSection("EmailSender:EmailFrom").Value, _configuration.GetSection("EmailSender:EmailAccountPassword").Value);
 
         await googleSmtp.SendAsync(email);

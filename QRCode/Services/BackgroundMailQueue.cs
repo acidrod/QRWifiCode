@@ -12,9 +12,9 @@ public class BackgroundMailQueue<T> : IBackgroundQueue<T> where T : class
         _items.Enqueue(item);
     }
 
-    public T Dequeue()
+    public T? Dequeue()
     {
-        var succcess = _items.TryDequeue(out var workItem);
-        return succcess ? workItem : null;
+        _items.TryDequeue(out var workItem);
+        return workItem;
     }
 }

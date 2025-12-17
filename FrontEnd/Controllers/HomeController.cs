@@ -8,10 +8,12 @@ namespace FrontEnd.Controllers;
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public HomeController(ILogger<HomeController> logger)
+    public HomeController(ILogger<HomeController> logger, IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
+        _httpClientFactory = httpClientFactory;
     }
 
     public IActionResult Index()
@@ -22,10 +24,31 @@ public class HomeController : Controller
     [HttpGet]
     public async Task<IActionResult> WiFi()
     {
-        HttpClient httpClient = new();
-        var response = await httpClient.GetAsync("https://localhost:7044/wifi");
-        var data = await response.Content.ReadAsStringAsync();
-        return View(JsonSerializer.Deserialize<List<WifiViewModel>>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!);
+        try
+        {
+            var httpClient = _httpClientFactory.CreateClient("BackendApi");
+            var response = await httpClient.GetAsync("/wifi");
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("Backend returned status code: {StatusCode}", response.StatusCode);
+                return View(new List<WifiViewModel>());
+            }
+            
+            var data = await response.Content.ReadAsStringAsync();
+            
+            if (string.IsNullOrWhiteSpace(data))
+            {
+                return View(new List<WifiViewModel>());
+            }
+            
+            return View(JsonSerializer.Deserialize<List<WifiViewModel>>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Error calling backend API");
+            return View(new List<WifiViewModel>());
+        }
     }
 
     public IActionResult CreateWifiQR()
@@ -35,8 +58,8 @@ public class HomeController : Controller
 
     public async Task<IActionResult> EditarAsync(int id)
     {
-        HttpClient httpClient = new();
-        var respose = await httpClient.GetAsync($"https://localhost:7044/wifi/{id}");
+        var httpClient = _httpClientFactory.CreateClient("BackendApi");
+        var respose = await httpClient.GetAsync($"/wifi/{id}");
         var data = await respose.Content.ReadAsStringAsync();
 
         var model = JsonSerializer.Deserialize<WifiViewModel>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -46,15 +69,15 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Borrar(string id)
     {
-        HttpClient httpClient = new();
-        await httpClient.DeleteAsync("https://localhost:7044/wifi/" + id);
+        var httpClient = _httpClientFactory.CreateClient("BackendApi");
+        await httpClient.DeleteAsync("/wifi/" + id);
         return RedirectToAction("WiFi");
     }
 
     public async Task<IActionResult> Imprimir(string id)
     {
-        HttpClient httpClient = new();
-        var respose = await httpClient.GetAsync($"https://localhost:7044/wifi/{id}/print/");
+        var httpClient = _httpClientFactory.CreateClient("BackendApi");
+        var respose = await httpClient.GetAsync($"/wifi/{id}/print/");
         var data = await respose.Content.ReadAsStringAsync();
 
         var viewModel = new ImprimirViewModel()
