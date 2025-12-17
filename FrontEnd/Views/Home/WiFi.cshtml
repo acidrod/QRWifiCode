@@ -67,7 +67,7 @@
 
         document.getElementById('confirmDeleteButton').addEventListener('click', function () {
             if (wifiIdToDelete !== "") {
-                var url = 'https://localhost:7044/wifi/' + wifiIdToDelete;
+                var url = 'https://localhost:7044/v1/wifi/' + wifiIdToDelete;
                 console.log(url);
                 fetch(url, {
                     method: 'DELETE'

@@ -54,7 +54,7 @@
             var mailTo = document.getElementById('MailTo').value;
             var id = document.getElementById('Id').value;
             var method = id == 0 ? 'POST':'PUT';
-            var url = 'https://localhost:7044/wifi';
+            var url = 'https://localhost:7044/v1/wifi';
 
             if(method === 'PUT'){
                 url += '/' + id;

@@ -27,7 +27,7 @@ public class HomeController : Controller
         try
         {
             var httpClient = _httpClientFactory.CreateClient("BackendApi");
-            var response = await httpClient.GetAsync("/wifi");
+            var response = await httpClient.GetAsync("/v1/wifi");
             
             if (!response.IsSuccessStatusCode)
             {
@@ -59,7 +59,7 @@ public class HomeController : Controller
     public async Task<IActionResult> EditarAsync(int id)
     {
         var httpClient = _httpClientFactory.CreateClient("BackendApi");
-        var respose = await httpClient.GetAsync($"/wifi/{id}");
+        var respose = await httpClient.GetAsync($"/v1/wifi/{id}");
         var data = await respose.Content.ReadAsStringAsync();
 
         var model = JsonSerializer.Deserialize<WifiViewModel>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -70,14 +70,14 @@ public class HomeController : Controller
     public async Task<IActionResult> Borrar(string id)
     {
         var httpClient = _httpClientFactory.CreateClient("BackendApi");
-        await httpClient.DeleteAsync("/wifi/" + id);
+        await httpClient.DeleteAsync("/v1/wifi/" + id);
         return RedirectToAction("WiFi");
     }
 
     public async Task<IActionResult> Imprimir(string id)
     {
         var httpClient = _httpClientFactory.CreateClient("BackendApi");
-        var respose = await httpClient.GetAsync($"/wifi/{id}/print/");
+        var respose = await httpClient.GetAsync($"/v1/wifi/{id}/print/");
         var data = await respose.Content.ReadAsStringAsync();
 
         var viewModel = new ImprimirViewModel()
